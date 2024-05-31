@@ -1,0 +1,61 @@
+# .github/workflows/build-and-deploy.yml
+
+name: Build and Deploy
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18.x'
+
+      - name: Restore Yarn cache
+        uses: actions/cache@v2
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build application
+        run: yarn run build
+
+      - name: Deploy to personal server
+        uses: easingthemes/ssh-deploy@v2.0.4
+        with:
+          ssh-private-key: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}          
+          remote-user: ${{ secrets.SERVER_USER }}
+          host: ${{ secrets.SERVER_HOST }}          
+          local-path: ./build          
+          remote-path: /var/www/myapp          
+          args: -avz --delete      
+        
+      - name: Send build completion webhook        
+        uses: joelwmale/webhook-action@2.1.0        
+        with:          
+            url: ${{ secrets.BUILD_WEBHOOK_URL }}
+            body: '{ "status": "success", "summary": "Build completed successfully" }'
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send deploy completion webhook
+        uses: joelwmale/webhook-action@2.1.0
+        with:
+          url: ${{ secrets.DEPLOY_WEBHOOK_URL }}          
+          body: '{ "status": "success", "summary": "Deployment completed successfully" }'
+
+
+          
