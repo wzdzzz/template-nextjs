@@ -1,14 +1,10 @@
 /** @type {import("eslint").Linter.Config} */
 const config = {
   parserOptions: {
-    ecmaFeatures: {
-      jsx: true,
-    },
-    ecmaVersion: 12,
-    sourceType: 'module',
-    // project: 'tsconfig.json',
+    // project: true,
     tsconfigRootDir: __dirname,
   },
+  ignorePatterns: ['.eslintrc.cjs', "next.config.js", "tailwind.config.ts"],
   plugins: ["@typescript-eslint", "tailwindcss"],
   extends: [
     "next/core-web-vitals",
